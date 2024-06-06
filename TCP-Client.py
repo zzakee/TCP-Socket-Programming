@@ -14,10 +14,10 @@ Length_Bytes = 4  # 长度字节长度
 def is_valid_ip(ip_str):
     """检查IP地址是否有效"""
     try:
-        ipaddress.ip_address(ip_str)
+        ipaddress.ip_address(ip_str)  # 尝试解析IP地址
         return True
     except ValueError:
-        return False
+        return False  # 如果解析失败，返回False
 
 
 def is_valid_port(port):
@@ -58,9 +58,9 @@ def get_send_message(data, lmin, lmax):
     """根据指定的范围随机分割数据。"""
     info = []
     while len(data) > 0:
-        length = min(len(data), random.randint(lmin, lmax))
-        info.append(data[0:length])
-        data = data[length:]
+        length = min(len(data), random.randint(lmin, lmax))   # 选择一个随机的长度，不超过最大值且不超过数据剩余长度
+        info.append(data[0:length])  # 添加切片到列表
+        data = data[length:]  # 更新剩余数据
     return info
 
 
@@ -68,7 +68,7 @@ def handle_message(message):
     """根据消息类型解析传入的消息。"""
     type = int(message[0:Type_Bytes])
     if type == 1:
-        N = int(message[Type_Bytes:Type_Bytes + N_Bytes])
+        N = int(message[Type_Bytes:Type_Bytes + N_Bytes])  # 获取块数
         return type, N
     elif type == 2:
         return type, ""
@@ -84,37 +84,37 @@ def handle_message(message):
 
 def main(server_ip, server_port, lmin, lmax):
     """主函数用于管理客户端与服务器的通信。"""
-    data = get_file_message(FILE_IN)
-    info = get_send_message(data, lmin, lmax)
-    request = "01" + str(len(info)).zfill(Length_Bytes)
+    data = get_file_message(FILE_IN)  # 从文件获取数据
+    info = get_send_message(data, lmin, lmax)  # 获取发送的信息块
+    request = "01" + str(len(info)).zfill(Length_Bytes)  # 构造请求消息
 
-    client_socket = create_socket()
-    client_socket.connect((server_ip, server_port))
-    client_socket.send(request.encode())
+    client_socket = create_socket()  # 创建套接字
+    client_socket.connect((server_ip, server_port))  # 连接到服务器
+    client_socket.send(request.encode())  # 发送请求
 
-    response = client_socket.recv(Buffer_Size)
-    details = handle_message(response.decode())
+    response = client_socket.recv(Buffer_Size)  # 接收响应
+    details = handle_message(response.decode())  # 解析响应
 
     if details[0] == 2:
         reverse_info = []
         idx = 1
         for i in info:
-            request = "03" + str(len(i)).zfill(Length_Bytes) + i
-            client_socket.send(request.encode())
-            response = client_socket.recv(Buffer_Size)
-            details = handle_message(response.decode())
+            request = "03" + str(len(i)).zfill(Length_Bytes) + i  # 构造每个数据块的请求
+            client_socket.send(request.encode())  # 发送数据块
+            response = client_socket.recv(Buffer_Size)  # 接收响应
+            details = handle_message(response.decode())  # 解析响应
             if details[0] == 4:
                 reverse_info.append(details[2])
                 print(f"第{idx}块 : 反转的文本为 {details[2]}")
                 idx += 1
             else:
-                print('Fetch invalid message')
+                print('Fetch invalid message')  # 接收到无效消息
                 return
     else:
         print('Fetch invalid message')
         return
 
-    update_file_message(FILE_OUT, reverse_info)
+    update_file_message(FILE_OUT, reverse_info)  # 更新输出文件
 
 
 if __name__ == "__main__":
